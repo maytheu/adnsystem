@@ -8,24 +8,16 @@ import * as path from 'path';
 import 'dotenv/config';
 import { env } from '@apps/core';
 import { AppError, globalErrorHndler } from '@apps/error';
-import amqp from 'amqplib';
+import { USER, mqServer } from '@apps/queue';
 
 import router from './routes';
 
 const app = express();
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
-app.use(express.json())
+app.use(express.json());
 
-export let channel, connection;
-async function rabbitQue() {
-  const amqpServer = 'amqp://localhost:5672';
-  connection = await amqp.connect(amqpServer);
-  channel = await connection.createChannel();
-  await channel.assertQueue('AUTH');
-}
-
-rabbitQue()
+mqServer(USER);
 
 app.use('/api/auth', router);
 app.use((req: Request, res: Response, next: NextFunction) => {

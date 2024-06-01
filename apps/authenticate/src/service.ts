@@ -1,9 +1,10 @@
 import { env, prisma } from '@apps/core';
 import { AppError } from '@apps/error';
+import { NOTIFICATION, WALLET, channel } from '@apps/queue';
 import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { email } from 'envalid';
 import jwt from 'jsonwebtoken';
-import { channel } from './main';
 
 class AuthService {
   login = async (data: { email: string; password: string }) => {
@@ -44,11 +45,22 @@ class AuthService {
           email: data.email,
           password: hashPassword,
           notificationType: data.notificationType,
+          phone: data.phone,
         },
       });
       //   emit value to wallet service
-      channel.sendToQueue('WALLET', Buffer.from(newUser.id.toString()));
+      channel.sendToQueue(WALLET, Buffer.from(newUser.id.toString()));
       //    emit signup notification
+      channel.sendToQueue(
+        NOTIFICATION,
+        Buffer.from(
+          JSON.stringify({
+            email: data.email,
+            name: data.name,
+            ohone: data.phone,
+          })
+        )
+      );
       return this.signJwt(newUser.id.toString());
     } catch (error) {
       return error;
@@ -56,7 +68,7 @@ class AuthService {
   };
 
   private signJwt = (id: string) => {
-    return jwt.sign({id}, env.SECRET_KEY, { expiresIn: '24h' });
+    return jwt.sign({ id }, env.SECRET_KEY, { expiresIn: '24h' });
   };
 }
 
