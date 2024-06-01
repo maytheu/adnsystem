@@ -1,9 +1,9 @@
 import { RequestHandler } from 'express';
 
 import { Controller } from '@apps/core';
-import { validateLoginData, validateSignupData } from './validator';
+import { validateLoginData, validateSignupData } from './auth.validator';
 import { AppError } from '@apps/error';
-import AuthService from './service';
+import AuthService from './auth.service';
 
 class Authcontroller extends Controller {
   login: RequestHandler = async (req, res, next) => {

@@ -27,6 +27,24 @@ class WalletService {
       return error;
     }
   };
+
+  updateWallet = async (
+    data: { userId: number; amount: number },
+    operator: string
+  ) => {
+    try {
+      const action =
+        operator == '+'
+          ? { increment: data.amount }
+          : { decrement: data.amount };
+      const wallet = await prisma.wallet.update({
+        where: { userId: data.userId },
+        data: { balance: action },
+      });
+    } catch (error) {
+      return error;
+    }
+  };
 }
 
 export default new WalletService();

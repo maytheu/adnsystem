@@ -8,15 +8,12 @@ import * as path from 'path';
 import 'dotenv/config';
 import { env } from '@apps/core';
 import { AppError, globalErrorHndler } from '@apps/error';
-import { USER, mqServer } from '@apps/queue';
 import router from './user.routes';
 
 const app = express();
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use(express.json());
-
-mqServer(USER);
 
 app.use('/api/user', router);
 app.use((req: Request, res: Response, next: NextFunction) => {

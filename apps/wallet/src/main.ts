@@ -8,7 +8,7 @@ import 'dotenv/config';
 import { env } from '@apps/core';
 import { AppError, globalErrorHndler } from '@apps/error';
 
-import router from './routes';
+import router from './wallet.routes';
 
 const app = express();
 
@@ -26,6 +26,6 @@ app.use(globalErrorHndler);
 
 const port = env.PORT || 5004;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/api/wallet`);
 });
 server.on('error', console.error);

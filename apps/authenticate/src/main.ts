@@ -10,7 +10,7 @@ import { env } from '@apps/core';
 import { AppError, globalErrorHndler } from '@apps/error';
 import { USER, mqServer } from '@apps/queue';
 
-import router from './routes';
+import router from './auth.routes';
 
 const app = express();
 
@@ -29,6 +29,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(globalErrorHndler);
 const port = env.PORT || 5000;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/api/auth`);
 });
 server.on('error', console.error);

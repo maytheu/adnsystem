@@ -3,19 +3,31 @@
  * This is only a minimal backend to get started.
  */
 
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import * as path from 'path';
+import 'dotenv/config';
+import { env } from '@apps/core';
+import { AppError, globalErrorHndler } from '@apps/error';
+import {  PAYMENT, mqServer } from '@apps/queue';
+import router from './payment.routes';
 
 const app = express();
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use(express.json());
 
-app.get('/api', (req, res) => {
-  res.send({ message: 'Welcome to payment!' });
+mqServer(PAYMENT);
+
+app.use('/api/payment', router);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(
+    new AppError(`Ooops.. ${req.originalUrl} not found on this server`, 404)
+  );
 });
 
-const port = process.env.PORT || 3333;
+app.use(globalErrorHndler);
+const port = env.PORT || 5002;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/api/payment`);
 });
 server.on('error', console.error);

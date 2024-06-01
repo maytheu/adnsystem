@@ -1,15 +1,21 @@
 import { prisma } from '@apps/core';
-import { USER, WALLET } from '@apps/queue';
+import { PAYMENT, USER, WALLET } from '@apps/queue';
 import { channel } from '@apps/queue';
 import { User } from '@prisma/client';
 
 class UserService {
-  user = async (userId: number) => {
+  user = async (userId: number, isMq = false) => {
     try {
-      return await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { email: true, phone: true, notificationType: true },
       });
+      // send user to payment service
+      if (isMq) {
+        channel.sendToQueue(PAYMENT, Buffer.from(JSON.stringify(user)));
+      }
+
+      return user;
     } catch (error) {
       return error;
     }
