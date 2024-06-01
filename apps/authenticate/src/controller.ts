@@ -28,7 +28,7 @@ class Authcontroller extends Controller {
       const data = await AuthService.signup(req.body);
       if (data instanceof AppError || data instanceof Error) return next(data);
 
-      this.sendResp(res, 'Account created successfully', { token: data });
+      this.sendCreatedResp(res, 'Account created successfully', { token: data });
     } catch (error) {
       next(error);
     }

@@ -49,7 +49,10 @@ class AuthService {
         },
       });
       //   emit value to wallet service
-      channel.sendToQueue(WALLET, Buffer.from(newUser.id.toString()));
+      channel.sendToQueue(
+        WALLET,
+        Buffer.from(JSON.stringify({ userId: newUser.id, task: 'newWallet' }))
+      );
       //    emit signup notification
       channel.sendToQueue(
         NOTIFICATION,
