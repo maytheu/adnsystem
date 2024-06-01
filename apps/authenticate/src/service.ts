@@ -3,6 +3,7 @@ import { AppError } from '@apps/error';
 import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { channel } from './main';
 
 class AuthService {
   login = async (data: { email: string; password: string }) => {
@@ -11,7 +12,7 @@ class AuthService {
         where: { email: data.email },
         select: { password: true, id: true },
       });
-      if (user) return new AppError('User cannot be authenticated', 401);
+      if (!user) return new AppError('User cannot be authenticated', 401);
 
       const confirmPassword = await bcrypt.compare(
         data.password,
@@ -35,7 +36,7 @@ class AuthService {
       if (user) return new AppError('Account already created', 400);
 
       const salt = await bcrypt.genSalt(10);
-      const hashPassword = await bcrypt.hash(user.password, salt);
+      const hashPassword = await bcrypt.hash(data.password, salt);
 
       const newUser = await prisma.user.create({
         data: {
@@ -46,7 +47,8 @@ class AuthService {
         },
       });
       //   emit value to wallet service
-    //    emit signup notification
+      channel.sendToQueue('WALLET', Buffer.from(newUser.id.toString()));
+      //    emit signup notification
       return this.signJwt(newUser.id.toString());
     } catch (error) {
       return error;
@@ -54,7 +56,7 @@ class AuthService {
   };
 
   private signJwt = (id: string) => {
-    return jwt.sign(id, env.SECRET_KEY, { expiresIn: '1d' });
+    return jwt.sign({id}, env.SECRET_KEY, { expiresIn: '24h' });
   };
 }
 

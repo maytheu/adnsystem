@@ -17,7 +17,7 @@
     "paths": {
       "@apps/core": ["libs/core/src/index.ts"],
       "@apps/error": ["libs/error/src/index.ts"],
-      "@auto-dep-system/controller": ["libs/core/src/controller/src/index.ts"]
+      "@auto-dep-system/queue": ["libs/queue/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
