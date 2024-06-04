@@ -1,11 +1,12 @@
 import { isAuthenticated } from "@apps/core";
 import { Router } from "express";
-import paymentController from "./payment.controller";
+import PaymentController from "./payment.controller";
 
 const router = Router()
 
-router.post('/credit', isAuthenticated, paymentController.credit)
-router.post('/debit', isAuthenticated, paymentController.debit)
-router.post('/notify_insufficient', isAuthenticated)
+router.post('/credit', isAuthenticated, PaymentController.credit)
+router.post('/debit', isAuthenticated, PaymentController.debit)
+router.post('/webhook', PaymentController.webhook)
+router.get('/verify/:ref', PaymentController.verify)
 
 export default router

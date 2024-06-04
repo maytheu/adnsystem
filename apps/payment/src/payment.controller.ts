@@ -1,5 +1,5 @@
 import { Controller, IGetUserAuthInfoRequest } from '@apps/core';
-import { NextFunction, Response } from 'express';
+import { NextFunction, RequestHandler, Response } from 'express';
 import { amountValidation } from './payment.validator';
 import { AppError } from '@apps/error';
 import paymentService from './payment.service';
@@ -12,13 +12,12 @@ class PaymentCtroller extends Controller {
   ) => {
     try {
       const { error } = amountValidation(req.body);
-      if (error) return next(new AppError('Validation failed', 422));
+      if (error) return next(new AppError(error.details[0].message, 422));
 
       const { id } = req.user;
       req.body.userId = +id;
       const data = await paymentService.credit(req.body);
       if (data instanceof Error) return next(data);
-      console.log(data);
 
       this.sendResp(res, '', { redirect_url: data });
     } catch (error) {
@@ -33,26 +32,33 @@ class PaymentCtroller extends Controller {
   ) => {
     try {
       const { error } = amountValidation(req.body);
-      if (error) return next(new AppError('Validation failed', 422));
+      if (error) return next(new AppError(error.details[0].message, 422));
 
       const { id } = req.user;
       req.body.userId = +id;
       const data = await paymentService.debit(req.body);
       if (data instanceof Error) return next(data);
-      console.log(data);
 
-      this.sendResp(res, '', { redirect_url: data });
+      this.sendResp(res, '', { data });
     } catch (error) {
       next(error);
     }
   };
 
-  stimulateNotification = async (
-    req: IGetUserAuthInfoRequest,
-    res: Response,
-    next: NextFunction
-  ) => {
+  webhook: RequestHandler = async (req, res, next) => {
     try {
+      await paymentService.webhook(req.body);
+      this.sendResp(res, '', {});
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verify: RequestHandler = async (req, res, next) => {
+    try {
+      const { ref } = req.params;
+      const data = await paymentService.verify(ref);
+      this.sendResp(res, '', data);
     } catch (error) {
       next(error);
     }

@@ -1,30 +1,32 @@
-import { env, prisma } from '@apps/core';
+import { PaymentData, prisma } from '@apps/core';
 import { AppError } from '@apps/error';
-import { channel, NOTIFICATION, PAYMENT, USER, WALLET } from '@apps/queue';
+import {
+  channel,
+  mqServer,
+  NOTIFICATION,
+  PAYMENT_CREDIT,
+  PAYMENT_DEBIT,
+  USER,
+  WALLET,
+} from '@apps/queue';
 import axios from 'axios';
-
-interface PaymentData {
-  amount: number;
-  userId: number;
-}
+import { secret } from './secret';
 
 class PaymentService {
   private headers = {
-    Authorization: `Bearer ${env.PAYSTACK_SECRET}`,
+    Authorization: `Bearer ${secret.PAYSTACK_SECRET}`,
     'Content-Type': 'application/json',
   };
 
   credit = async (data: PaymentData) => {
     try {
-      // get user email from user service
+      await mqServer(PAYMENT_CREDIT);
       channel.sendToQueue(USER, Buffer.from(JSON.stringify(data.userId)));
-      // consume the user details
       const result = await new Promise((resolve, reject) => {
-        // Create a unique consumer tag for this specific request
         const consumerTag = `consumer_${data.userId}_${Date.now()}`;
 
         channel.consume(
-          PAYMENT,
+          PAYMENT_CREDIT,
           async (userData) => {
             if (userData !== null) {
               const user = JSON.parse(userData.content.toString());
@@ -52,9 +54,8 @@ class PaymentService {
                 });
 
                 channel.ack(userData);
-                resolve(authorization_url);
+                resolve({ authorization_url, reference });
 
-                // Cancel the consumer after processing the message
                 channel.cancel(consumerTag, (err, ok) => {
                   if (err) {
                     console.error('Error canceling consumer:', err);
@@ -64,7 +65,6 @@ class PaymentService {
                 channel.ack(userData); // Ensure the message is acknowledged to avoid re-delivery
                 reject(error);
 
-                // Cancel the consumer in case of error
                 channel.cancel(consumerTag, (err, ok) => {
                   if (err) {
                     console.error('Error canceling consumer:', err);
@@ -85,9 +85,10 @@ class PaymentService {
 
   debit = async (data: PaymentData) => {
     try {
+      await mqServer(PAYMENT_DEBIT);
       channel.sendToQueue(
         WALLET,
-        Buffer.from(JSON.stringify({ userId: data.userId, task: 'getWallet' }))
+        Buffer.from(JSON.stringify({ data, task: 'debitWallet' }))
       );
 
       //receive the user wallet info from wallet service
@@ -97,7 +98,7 @@ class PaymentService {
         const onMessage = (data) => {
           if (data !== null) {
             channel.ack(data);
-            resolve({ wallet: JSON.parse(data.content.toString()) });
+            resolve({ wallet: JSON.parse(data.content) });
             // Cancel the consumer after processing the message
             channel.cancel(consumerTag, (err, ok) => {
               if (err) {
@@ -109,7 +110,7 @@ class PaymentService {
 
         // Consume a single message with an exclusive consumer
         channel.consume(
-          PAYMENT,
+          PAYMENT_DEBIT,
           onMessage,
           { noAck: false, consumerTag, exclusive: true },
           (err) => {
@@ -132,7 +133,6 @@ class PaymentService {
       const response = await axios.get(paystackUrl, { headers: this.headers });
       const { status } = response.data.data;
       if (!status) {
-        channel.sendToQueue(NOTIFICATION, Buffer.from('Payment not confirmed'));
         return new AppError('Payment not confirm', 409);
       }
       this.verifyPayment(reference);
@@ -149,6 +149,7 @@ class PaymentService {
 
   private verifyPayment = async (reference: string) => {
     try {
+      await mqServer(PAYMENT_CREDIT);
       const user = await prisma.payReference.findFirst({
         where: { reference, completed: false },
         select: { userId: true, amount: true, id: true },
@@ -156,13 +157,19 @@ class PaymentService {
       if (user) {
         channel.sendToQueue(
           WALLET,
-          Buffer.from(JSON.stringify({ user, operator: '+' }))
+          Buffer.from(
+            JSON.stringify({
+              data: { userId: user.userId, amount: user.amount },
+              task: 'creditWallet',
+            })
+          )
         );
         await prisma.payReference.update({
           where: { id: user.id },
           data: { completed: true },
         });
       }
+      return user;
     } catch (error) {}
   };
 }

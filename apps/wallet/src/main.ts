@@ -19,19 +19,20 @@ app.use(express.json());
 mqServer(WALLET).then(() => {
   channel.consume(WALLET, async (data) => {
     const walletData = JSON.parse(data.content);
-    if (walletData?.task) {
-      if (walletData.task === 'newWallet') {
-        const newWallet = await WalletService.newWallet(+walletData.userId);
-
-        channel.ack(data);
-      }
-      if (walletData.task === 'getWallet') {
-        await WalletService.wallet(+walletData.userId);
-        channel.ack(data);
-      }
-    } else {
-      await WalletService.creditWallet(walletData.user);
+    if (walletData.task === 'newWallet') {
+      const newWallet = await WalletService.newWallet(+walletData.userId);
     }
+    if (walletData.task === 'getWallet') {
+      await WalletService.wallet(+walletData.userId);
+    }
+
+    if (walletData.task === 'debitWallet') {
+      await WalletService.debitWallet(walletData.data);
+    }
+    if (walletData.task === 'creditWallet') {
+      await WalletService.creditWallet(walletData.data);
+    }
+    channel.ack(data);
   });
 });
 

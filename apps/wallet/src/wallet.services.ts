@@ -1,4 +1,4 @@
-import { prisma } from '@apps/core';
+import { PaymentData, prisma } from '@apps/core';
 import {
   NOTIFICATION,
   PAYMENT_CREDIT,
@@ -22,6 +22,7 @@ class WalletService {
         where: { userId },
         select: { balance: true },
       });
+
       return channel.sendToQueue(
         USER_WALLET,
         Buffer.from(JSON.stringify(wallet))
@@ -31,15 +32,19 @@ class WalletService {
     }
   };
 
-  creditWallet = async (data: { userId: number; amount: number }) => {
+  creditWallet = async (data: PaymentData) => {
     try {
-      const wallet = await prisma.wallet.update({
+      const user = await prisma.wallet.findFirst({
         where: { userId: data.userId },
+        select: { id: true },
+      });
+      const wallet = await prisma.wallet.update({
+        where: { id: user.id },
         data: { balance: { increment: +data.amount } },
         select: { balance: true },
       });
 
-      channel.sendToQueue(PAYMENT_CREDIT, Buffer.from(JSON.stringify(wallet)));
+      // channel.sendToQueue(PAYMENT_CREDIT, Buffer.from(JSON.stringify(wallet)));
 
       channel.sendToQueue(
         NOTIFICATION,
@@ -59,12 +64,13 @@ class WalletService {
     }
   };
 
-  debitWallet = async (data: { userId: number; amount: number }) => {
+  debitWallet = async (data: PaymentData) => {
     try {
-      const wallet = await prisma.wallet.findUnique({
+      const wallet = await prisma.wallet.findFirst({
         where: { userId: data.userId },
-        select: { balance: true },
+        select: { balance: true, id: true },
       });
+
       if (wallet.balance < data.amount) {
         // use notification service
         channel.sendToQueue(
@@ -83,18 +89,21 @@ class WalletService {
         channel.sendToQueue(
           PAYMENT_DEBIT,
           Buffer.from(
-            'An error occured, check your primary notification setting'
+            JSON.stringify(
+              'An error occured, check your primary notification setting for more details'
+            )
           )
         );
-        console.log(wallet, data);
       } else {
-        const wallet = await prisma.wallet.update({
-          where: { userId: data.userId },
+        const walletUpdate = await prisma.wallet.update({
+          where: { id: wallet.id },
           data: { balance: { decrement: +data.amount } },
           select: { balance: true },
         });
-
-        channel.sendToQueue(PAYMENT_DEBIT, Buffer.from(JSON.stringify(wallet)));
+        channel.sendToQueue(
+          PAYMENT_DEBIT,
+          Buffer.from(JSON.stringify(walletUpdate))
+        );
 
         channel.sendToQueue(
           NOTIFICATION,
