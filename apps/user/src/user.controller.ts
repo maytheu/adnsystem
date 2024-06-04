@@ -30,7 +30,7 @@ class UserController extends Controller {
   ) => {
     try {
       const { error } = validateUserProfile(req.body);
-      if (error) return next(new AppError('Validation failed', 422));
+      if (error) return next(new AppError(error.details[0].message, 422));
 
       const { id } = req.user;
       req.body.id = +id;
