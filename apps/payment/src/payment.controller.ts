@@ -18,8 +18,7 @@ class PaymentCtroller extends Controller {
       req.body.userId = +id;
       const data = await paymentService.credit(req.body);
       if (data instanceof Error) return next(data);
-    console.log(data);
-    
+      console.log(data);
 
       this.sendResp(res, '', { redirect_url: data });
     } catch (error) {
@@ -33,6 +32,16 @@ class PaymentCtroller extends Controller {
     next: NextFunction
   ) => {
     try {
+      const { error } = amountValidation(req.body);
+      if (error) return next(new AppError('Validation failed', 422));
+
+      const { id } = req.user;
+      req.body.userId = +id;
+      const data = await paymentService.debit(req.body);
+      if (data instanceof Error) return next(data);
+      console.log(data);
+
+      this.sendResp(res, '', { redirect_url: data });
     } catch (error) {
       next(error);
     }

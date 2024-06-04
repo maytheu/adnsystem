@@ -38,7 +38,7 @@ export const validateSignupData = (data) => {
     notificationType: Joi.string()
       .required()
       .label('notificationType')
-      .valid('email', 'phone')
+      .valid('Email', 'Phone')
       .messages({
         'any.required': '{{#label}} is required',
         'any.valid': '{{#label}} must be email | phone',

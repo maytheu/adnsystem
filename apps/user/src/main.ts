@@ -6,9 +6,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import * as path from 'path';
 import 'dotenv/config';
-import { env } from '@apps/core';
 import { AppError, globalErrorHndler } from '@apps/error';
+
 import router from './user.routes';
+import { secret } from './secret';
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(globalErrorHndler);
-const port = env.PORT || 3333;
+const port = secret.PORT || 5003;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api/user`);
 });

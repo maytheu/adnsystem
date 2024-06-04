@@ -12,17 +12,15 @@ mqServer(WALLET).then(() => {
     if (walletData?.task) {
       if (walletData.task === 'newWallet') {
         const newWallet = await WalletService.newWallet(+walletData.userId);
-        if (newWallet instanceof Error) {
-        } else {
-          channel.ack(data);
-        }
+
+        channel.ack(data);
       }
       if (walletData.task === 'getWallet') {
         await WalletService.wallet(+walletData.userId);
         channel.ack(data);
       }
     } else {
-      await WalletService.updateWallet(walletData.user, walletData.operator);
+      await WalletService.creditWallet(walletData.user);
     }
   });
 });

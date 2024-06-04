@@ -58,9 +58,13 @@ class AuthService {
         NOTIFICATION,
         Buffer.from(
           JSON.stringify({
-            email: data.email,
-            name: data.name,
-            ohone: data.phone,
+            data: {
+              email: data.email,
+              name: data.name,
+              ohone: data.phone,
+              noticationType: data.notificationType,
+            },
+            notify: 'new',
           })
         )
       );

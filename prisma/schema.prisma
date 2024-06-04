@@ -37,7 +37,7 @@ model Wallet {
 
 model PayReference {
   id        Int      @id @default(autoincrement())
-  reference String
+  reference String   @unique()
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   amount    Float

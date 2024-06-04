@@ -1,6 +1,6 @@
 import { env, prisma } from '@apps/core';
 import { AppError } from '@apps/error';
-import { channel, PAYMENT, USER, WALLET } from '@apps/queue';
+import { channel, NOTIFICATION, PAYMENT, USER, WALLET } from '@apps/queue';
 import axios from 'axios';
 
 interface PaymentData {
@@ -83,14 +83,62 @@ class PaymentService {
     }
   };
 
-  verify = async (reference: string) => {
-    const paystackUrl = `https://api.paystack.co/transaction/verify/${reference}`;
+  debit = async (data: PaymentData) => {
+    try {
+      channel.sendToQueue(
+        WALLET,
+        Buffer.from(JSON.stringify({ userId: data.userId, task: 'getWallet' }))
+      );
 
-    // Create Paystack transaction
-    const response = await axios.get(paystackUrl, { headers: this.headers });
-    const { status } = response.data.data;
-    if (!status) return new AppError('Payment not confirm', 409);
-    this.verifyPayment(reference);
+      //receive the user wallet info from wallet service
+      return new Promise((resolve, reject) => {
+        // Create a unique consumer tag for this specific request
+        const consumerTag = `data_${data.userId}_${Date.now()}`;
+        const onMessage = (data) => {
+          if (data !== null) {
+            channel.ack(data);
+            resolve({ wallet: JSON.parse(data.content.toString()) });
+            // Cancel the consumer after processing the message
+            channel.cancel(consumerTag, (err, ok) => {
+              if (err) {
+                reject(err);
+              }
+            });
+          }
+        };
+
+        // Consume a single message with an exclusive consumer
+        channel.consume(
+          PAYMENT,
+          onMessage,
+          { noAck: false, consumerTag, exclusive: true },
+          (err) => {
+            if (err) {
+              reject(err);
+            }
+          }
+        );
+      });
+    } catch (error) {
+      return error;
+    }
+  };
+
+  verify = async (reference: string) => {
+    try {
+      const paystackUrl = `https://api.paystack.co/transaction/verify/${reference}`;
+
+      // Create Paystack transaction
+      const response = await axios.get(paystackUrl, { headers: this.headers });
+      const { status } = response.data.data;
+      if (!status) {
+        channel.sendToQueue(NOTIFICATION, Buffer.from('Payment not confirmed'));
+        return new AppError('Payment not confirm', 409);
+      }
+      this.verifyPayment(reference);
+    } catch (error) {
+      return error;
+    }
   };
 
   webhook = async (data) => {
@@ -100,15 +148,22 @@ class PaymentService {
   };
 
   private verifyPayment = async (reference: string) => {
-    const user = await prisma.payReference.findFirst({
-      where: { reference, completed: false },
-      select: { userId: true, amount: true },
-    });
-
-    channel.sendToQueue(
-      WALLET,
-      Buffer.from(JSON.stringify({ user, operator: '+' }))
-    );
+    try {
+      const user = await prisma.payReference.findFirst({
+        where: { reference, completed: false },
+        select: { userId: true, amount: true, id: true },
+      });
+      if (user) {
+        channel.sendToQueue(
+          WALLET,
+          Buffer.from(JSON.stringify({ user, operator: '+' }))
+        );
+        await prisma.payReference.update({
+          where: { id: user.id },
+          data: { completed: true },
+        });
+      }
+    } catch (error) {}
   };
 }
 

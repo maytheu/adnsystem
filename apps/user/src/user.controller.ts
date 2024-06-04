@@ -3,6 +3,7 @@ import { NextFunction, RequestHandler, Response } from 'express';
 import userService from './user.service';
 import { validateUserProfile } from './user.validation';
 import { AppError } from '@apps/error';
+import { USER, channel } from '@apps/queue';
 
 class UserController extends Controller {
   profile = async (
@@ -36,7 +37,7 @@ class UserController extends Controller {
       const data = await userService.updateProfile(req.body);
       if (data instanceof Error) return next(data);
 
-      this.sendResp(res, 'Profile updated', {...req.body});
+      this.sendResp(res, 'Profile updated', { ...req.body });
     } catch (error) {
       next(error);
     }

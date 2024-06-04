@@ -5,7 +5,7 @@ import paymentController from "./payment.controller";
 const router = Router()
 
 router.post('/credit', isAuthenticated, paymentController.credit)
-router.post('/debit', isAuthenticated)
+router.post('/debit', isAuthenticated, paymentController.debit)
 router.post('/notify_insufficient', isAuthenticated)
 
 export default router

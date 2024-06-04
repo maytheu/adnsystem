@@ -1,5 +1,11 @@
 import { prisma } from '@apps/core';
-import { PAYMENT, USER, WALLET } from '@apps/queue';
+import {
+  PAYMENT_CREDIT,
+  USER,
+  USER_WALLET,
+  WALLET,
+  mqServer,
+} from '@apps/queue';
 import { channel } from '@apps/queue';
 import { User } from '@prisma/client';
 
@@ -12,7 +18,7 @@ class UserService {
       });
       // send user to payment service
       if (isMq) {
-        channel.sendToQueue(PAYMENT, Buffer.from(JSON.stringify(user)));
+        channel.sendToQueue(PAYMENT_CREDIT, Buffer.from(JSON.stringify(user)));
       }
 
       return user;
@@ -26,42 +32,52 @@ class UserService {
       const user = await this.user(userId);
       if (user instanceof Error) return user;
 
-      // make request from wallet service for user wallet info
+      // Make request from wallet service for user wallet info
       channel.sendToQueue(
         WALLET,
         Buffer.from(JSON.stringify({ userId, task: 'getWallet' }))
       );
 
-      //receive the user wallet info from wallet service
+      // Receive the user wallet info from wallet service
       return new Promise((resolve, reject) => {
-        // Create a unique consumer tag for this specific request
-        const consumerTag = `data_${userId}_${Date.now()}`;
         const onMessage = (data) => {
           if (data !== null) {
             channel.ack(data);
-            resolve({ user, wallet: JSON.parse(data.content.toString()) });
-            // Cancel the consumer after processing the message
-            channel.cancel(consumerTag, (err, ok) => {
-              if (err) {
-                reject(err);
-              }
-            });
+            try {
+              const wallet = JSON.parse(data.content.toString());
+              resolve({ user, wallet });
+            } catch (error) {
+              reject(new Error('Failed to parse wallet data'));
+            } finally {
+              channel.cancel(consumerTag, (err) => {
+                if (err) {
+                  console.error('Failed to cancel consumer', err);
+                }
+              });
+            }
+          } else {
+            reject(new Error('Received null data'));
           }
         };
 
-        // Consume a single message with an exclusive consumer
-        channel.consume(
-          USER,
-          onMessage,
-          { noAck: false, consumerTag, exclusive: true },
-          (err) => {
-            if (err) {
-              reject(err);
+        const consumerTag = `consumer_${userId}_${Date.now()}`;
+
+        mqServer(USER_WALLET).then(() => {
+          channel.consume(
+            USER_WALLET,
+            onMessage,
+            { noAck: false, consumerTag },
+            (err) => {
+              if (err) {
+                console.error('Failed to start consumer', err);
+                reject(err);
+              }
             }
-          }
-        );
+          );
+        });
       });
     } catch (error) {
+      console.error('Error in profile method', error);
       return error;
     }
   };
