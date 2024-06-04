@@ -1,14 +1,15 @@
 import { prisma } from '@apps/core';
-import { NOTIFICATION, PAYMENT_CREDIT, PAYMENT_DEBIT, USER, USER_WALLET, channel } from '@apps/queue';
+import {
+  NOTIFICATION,
+  PAYMENT_CREDIT,
+  PAYMENT_DEBIT,
+  USER_WALLET,
+  channel,
+} from '@apps/queue';
 
 class WalletService {
   newWallet = async (userId: number) => {
     try {
-      // channel.consume('WALLET', async (data) => {
-      //   const userId = JSON.parse(data.content);
-      //   await prisma.wallet.create({ data: { userId } });
-      //   channel.ack(data);
-      // });
       return await prisma.wallet.create({ data: { userId } });
     } catch (error) {
       return error;
@@ -21,7 +22,10 @@ class WalletService {
         where: { userId },
         select: { balance: true },
       });
-      return channel.sendToQueue(USER_WALLET, Buffer.from(JSON.stringify(wallet)));
+      return channel.sendToQueue(
+        USER_WALLET,
+        Buffer.from(JSON.stringify(wallet))
+      );
     } catch (error) {
       return error;
     }
@@ -91,6 +95,20 @@ class WalletService {
         });
 
         channel.sendToQueue(PAYMENT_DEBIT, Buffer.from(JSON.stringify(wallet)));
+
+        channel.sendToQueue(
+          NOTIFICATION,
+          Buffer.from(
+            JSON.stringify({
+              data: {
+                amount: data.amount,
+                balance: wallet.balance,
+                userId: data.userId,
+              },
+              notify: 'debit',
+            })
+          )
+        );
       }
     } catch (error) {
       return error;
