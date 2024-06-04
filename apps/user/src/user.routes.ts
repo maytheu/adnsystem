@@ -8,9 +8,9 @@ const router = Router();
 
 mqServer(USER).then(() => {
   channel.consume(USER, async (data) => {
-    const userId = JSON.parse(data.content);    
-    await userService.user(+userId, true);
-    channel.ack(data)
+    const val = JSON.parse(data.content);
+    await userService.user(+val.userId, val.action);
+    channel.ack(data);
   });
 });
 

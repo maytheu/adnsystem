@@ -1,7 +1,7 @@
 import path from 'path';
 import nodemailer from 'nodemailer';
 import { htmlToText } from 'html-to-text';
-import ejs from "ejs";
+import ejs from 'ejs';
 
 import { secret } from './secret';
 
@@ -56,7 +56,7 @@ class EmailService {
     }
   }
 
-  async sendWelcome() {
+  sendWelcome = async () => {
     const html = await ejs.renderFile(
       path.resolve('../views/mail/welcome-user.ejs'),
       {
@@ -65,9 +65,9 @@ class EmailService {
     );
     const subject = `Welcome ${this.name}`;
     return this.send(subject, html);
-  }
+  };
 
-  async sendCredit(amount: number, balance) {
+  sendCredit = async (amount: number, balance) => {
     const html = await ejs.renderFile(
       path.resolve('../views/mail/welcome-user.ejs'),
       {
@@ -78,9 +78,22 @@ class EmailService {
     );
     const subject = 'Credit notification';
     return this.send(subject, html);
-  }
+  };
 
-  async sendInsufficient(amount: number, balance) {
+  sendDebit = async (amount: number, balance) => {
+    const html = await ejs.renderFile(
+      path.resolve('../views/mail/welcome-user.ejs'),
+      {
+        name: this.name,
+        amount,
+        balance,
+      }
+    );
+    const subject = 'Debit notification';
+    return this.send(subject, html);
+  };
+
+  sendInsufficient = async (amount: number, balance) => {
     const html = await ejs.renderFile(
       path.resolve('../views/mail/welcome-user.ejs'),
       {
@@ -91,7 +104,7 @@ class EmailService {
     );
     const subject = 'Insufficeint notification';
     return this.send(subject, html);
-  }
+  };
 }
 
 export default EmailService;

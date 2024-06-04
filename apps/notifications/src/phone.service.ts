@@ -13,11 +13,16 @@ class PhoneService {
     const text = `Hi ${this.name}, welcome to a new world of convienency`;
   }
 
-  async sendCreditMessage() {
+  async sendCreditMessage(amount:number, balance:number) {
     const text = `Hi ${this.name}, welcome to a new world of convienency`;
   }
 
-  async sendInsuffientFundMessage() {
+  async sendDebitMessage(amount:number, balance:number) {
+    const text = `Hi ${this.name}, welcome to a new world of convienency`;
+  }
+
+
+  async sendInsuffientFundMessage(amount:number, balance:number) {
     const text = `Hi ${this.name}, welcome to a new world of convienency`;
   }
 }

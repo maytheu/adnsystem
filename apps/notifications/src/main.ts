@@ -18,15 +18,15 @@ mqServer(NOTIFICATION).then(() => {
       data.content
     );
     console.log(notificationEv);
-    
+
     if (notificationEv.notify === 'new') {
       await NotificationService.newNotification(notificationEv.data as any);
-    }
-    if (notificationEv.notify === 'insufficient-funds') {
-      await NotificationService.insufficientNotification(
-        notificationEv.data as any
+    } else
+      await NotificationService.sendNotification(
+        notificationEv.data as any,
+        data.notify
       );
-    }
+
     channel.ack(data);
   });
 });

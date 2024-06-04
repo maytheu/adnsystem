@@ -1,5 +1,6 @@
 import { prisma } from '@apps/core';
 import {
+  NOTIFY_USER,
   PAYMENT_CREDIT,
   USER,
   USER_WALLET,
@@ -10,17 +11,23 @@ import { channel } from '@apps/queue';
 import { User } from '@prisma/client';
 
 class UserService {
-  user = async (userId: number, isMq = false) => {
+  user = async (userId: number, action = '') => {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true, phone: true, notificationType: true },
+        select: {
+          email: true,
+          phone: true,
+          notificationType: true,
+          name: true,
+        },
       });
       // send user to payment service
-      if (isMq) {
+      if (action === 'payment') {
         channel.sendToQueue(PAYMENT_CREDIT, Buffer.from(JSON.stringify(user)));
+      } else if (action === 'notification') {
+        channel.sendToQueue(NOTIFY_USER, Buffer.from(JSON.stringify(user)));
       }
-
       return user;
     } catch (error) {
       return error;
@@ -77,7 +84,6 @@ class UserService {
         });
       });
     } catch (error) {
-      console.error('Error in profile method', error);
       return error;
     }
   };

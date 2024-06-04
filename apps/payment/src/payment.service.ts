@@ -21,7 +21,10 @@ class PaymentService {
   credit = async (data: PaymentData) => {
     try {
       await mqServer(PAYMENT_CREDIT);
-      channel.sendToQueue(USER, Buffer.from(JSON.stringify(data.userId)));
+      channel.sendToQueue(
+        USER,
+        Buffer.from(JSON.stringify({ userId: data.userId, action: 'payment' }))
+      );
       const result = await new Promise((resolve, reject) => {
         const consumerTag = `consumer_${data.userId}_${Date.now()}`;
 
