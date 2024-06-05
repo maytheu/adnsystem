@@ -58,7 +58,7 @@ class EmailService {
 
   sendWelcome = async () => {
     const html = await ejs.renderFile(
-      path.resolve('../views/mail/welcome-user.ejs'),
+      path.resolve('../assets/welcome.ejs'),
       {
         name: this.name,
       }
@@ -69,7 +69,7 @@ class EmailService {
 
   sendCredit = async (amount: number, balance) => {
     const html = await ejs.renderFile(
-      path.resolve('../views/mail/welcome-user.ejs'),
+      path.resolve('../assets/credit.ejs'),
       {
         name: this.name,
         amount,
@@ -82,7 +82,7 @@ class EmailService {
 
   sendDebit = async (amount: number, balance) => {
     const html = await ejs.renderFile(
-      path.resolve('../views/mail/welcome-user.ejs'),
+      path.resolve('../assets/debit.ejs'),
       {
         name: this.name,
         amount,
@@ -95,7 +95,7 @@ class EmailService {
 
   sendInsufficient = async (amount: number, balance) => {
     const html = await ejs.renderFile(
-      path.resolve('../views/mail/welcome-user.ejs'),
+      path.resolve('../assets/insufficient.ejs'),
       {
         name: this.name,
         amount,
