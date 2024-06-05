@@ -17,7 +17,6 @@ mqServer(NOTIFICATION).then(() => {
     const notificationEv: { data: object; notify: string } = JSON.parse(
       data.content
     );
-    console.log(notificationEv);
 
     if (notificationEv.notify === 'new') {
       await NotificationService.newNotification(notificationEv.data as any);
