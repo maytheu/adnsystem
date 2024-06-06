@@ -3,10 +3,13 @@
  * This is only a minimal backend to get started.
  */
 
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import * as path from 'path';
 import { NOTIFICATION, channel, mqServer } from '@apps/queue';
 import NotificationService from './notification.service';
+import { AppError } from '@apps/error';
+import { Notify, User } from '@apps/core';
+import { secret } from './secret';
 
 const app = express();
 
@@ -19,10 +22,10 @@ mqServer(NOTIFICATION).then(() => {
     );
 
     if (notificationEv.notify === 'new') {
-      await NotificationService.newNotification(notificationEv.data as any);
+      await NotificationService.newNotification(notificationEv.data as User);
     } else {
        NotificationService.sendNotification(
-        notificationEv.data as any,
+        notificationEv.data as Notify,
         notificationEv.notify
       );
     }
@@ -31,7 +34,14 @@ mqServer(NOTIFICATION).then(() => {
   });
 });
 
-const port = process.env.PORT || 5001;
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(
+    new AppError(`Ooops.. ${req.originalUrl} not found on this server`, 404)
+  );
+});
+
+
+const port = secret.PORT || 5001;
 const server = app.listen(port, () => {
   console.log(`Notification service on port: ${port}`);
 });

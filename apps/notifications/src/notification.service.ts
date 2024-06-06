@@ -27,10 +27,9 @@ class NotificationService {
           if (el !== null) {
             channel.ack(el);
             try {
-              const user = JSON.parse(el.content);              
+              const user:User = JSON.parse(el.content);              
               // send notification based on user preference
               if (user.notificationType === 'Email') {
-                console.log(user, action, 'email');                
                 if (action === 'credit')
                   await new EmailService(user.email, user.name).sendCredit(
                     data.amount,

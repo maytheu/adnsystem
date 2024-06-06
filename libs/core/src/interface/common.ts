@@ -15,5 +15,5 @@ export interface User {
   name: string;
   email: string;
   phone: string;
-  notifycationType: NotificationType;
+  notificationType: NotificationType;
 }
