@@ -4,7 +4,7 @@ export const validateUserProfile = (data) => {
   const schema = Joi.object({
     notificationType: Joi.string()
       .label('notificationType')
-      .valid('email', 'phone')
+      .valid('Email', 'Phone')
       .messages({
         'any.valid': '{{#label}} must be email | phone',
       }),

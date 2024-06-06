@@ -20,11 +20,12 @@ mqServer(NOTIFICATION).then(() => {
 
     if (notificationEv.notify === 'new') {
       await NotificationService.newNotification(notificationEv.data as any);
-    } else
-      await NotificationService.sendNotification(
+    } else {
+       NotificationService.sendNotification(
         notificationEv.data as any,
-        data.notify
+        notificationEv.notify
       );
+    }
 
     channel.ack(data);
   });

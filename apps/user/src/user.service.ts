@@ -25,7 +25,7 @@ class UserService {
       // send user to payment service
       if (action === 'payment') {
         channel.sendToQueue(PAYMENT_CREDIT, Buffer.from(JSON.stringify(user)));
-      } else if (action === 'notification') {
+      } else if (action === 'notification') {        
         channel.sendToQueue(NOTIFY_USER, Buffer.from(JSON.stringify(user)));
       }
       return user;

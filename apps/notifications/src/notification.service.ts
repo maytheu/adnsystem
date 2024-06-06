@@ -3,11 +3,9 @@ import EmailService from './email.service';
 import PhoneService from './phone.service';
 import { Notify, User } from '@apps/core';
 
-
-
 class NotificationService {
   newNotification = async (data: User) => {
-    try {
+    try {      
       await new EmailService(data.email, data.name).sendWelcome();
       await new PhoneService(data.phone, data.name).sendNewMessage();
     } catch (error) {
@@ -25,13 +23,14 @@ class NotificationService {
       );
 
       return new Promise((resolve, reject) => {
-        const onMessage = async (el) => {
+        const onMessage = async(el) => {
           if (el !== null) {
             channel.ack(el);
             try {
-              const user = JSON.parse(el.content);
+              const user = JSON.parse(el.content);              
               // send notification based on user preference
-              if (user.notifycationType === 'Email') {
+              if (user.notificationType === 'Email') {
+                console.log(user, action, 'email');                
                 if (action === 'credit')
                   await new EmailService(user.email, user.name).sendCredit(
                     data.amount,
@@ -47,8 +46,9 @@ class NotificationService {
                     user.email,
                     user.name
                   ).sendInsufficient(data.amount, data.balance);
-              // } else {
+              } else {
                 // phone verification
+                console.log(user, action, 'phone');                
                 if (action === 'credit')
                   await new PhoneService(
                     user.phone,
@@ -59,15 +59,17 @@ class NotificationService {
                     user.phone,
                     user.name
                   ).sendDebitMessage(data.amount, data.balance);
-                else
+                else {
                   await new PhoneService(
                     user.phone,
                     user.name
                   ).sendInsuffientFundMessage(data.amount, data.balance);
+                }
               }
-              resolve({});
+              resolve({ user });
             } catch (error) {
-              reject(new Error('Failed to parse wallet data'));
+              console.log(error);
+              reject(new Error('Failed to parse notification'));
             } finally {
               channel.cancel(consumerTag, (err) => {
                 if (err) {
@@ -80,7 +82,7 @@ class NotificationService {
           }
         };
 
-        const consumerTag = `consumer_${data.userId}_${Date.now()}`;
+        const consumerTag = `user-consumer_${data.userId}_${Date.now()}`;
 
         mqServer(NOTIFY_USER).then(() => {
           channel.consume(
@@ -100,7 +102,6 @@ class NotificationService {
       console.log(error);
     }
   };
-
 }
 
 export default new NotificationService();

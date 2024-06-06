@@ -57,41 +57,46 @@ class EmailService {
   }
 
   sendWelcome = async () => {
-    console.log('new email');
-    const html = await ejs.renderFile(path.resolve('./src/assets/welcome.ejs'), {
-      name: this.name,
-    });
-    console.log(html);
+    const html = await ejs.renderFile(
+      path.join(__dirname, 'assets', 'welcome.ejs'),
+      {
+        name: this.name,
+      }
+    );
 
     const subject = `Welcome ${this.name}`;
     return await this.send(subject, html);
   };
 
   sendCredit = async (amount: number, balance) => {
-    const html = await ejs.renderFile(path.resolve('./src/assets/credit.ejs'), {
-      name: this.name,
-      amount,
-      balance,
-    });
+    const html = await ejs.renderFile(
+      path.join(__dirname, 'assets', 'credit.ejs'),
+      {
+        name: this.name,
+        amount,
+        balance,
+      }
+    );
     const subject = 'Credit notification';
     return this.send(subject, html);
   };
 
   sendDebit = async (amount: number, balance) => {
-    const html = await ejs.renderFile(path.resolve('./src/assets/debit.ejs'), {
-      name: this.name,
-      amount,
-      balance,
-    });
+    const html = await ejs.renderFile(
+      path.join(__dirname, 'assets', 'debit.ejs'),
+      {
+        name: this.name,
+        amount,
+        balance,
+      }
+    );
     const subject = 'Debit notification';
     return await this.send(subject, html);
   };
 
   sendInsufficient = async (amount: number, balance) => {
-    console.log('insufficient');
-
     const html = await ejs.renderFile(
-      path.resolve('./src/assets/insufficient.ejs'),
+      path.join(__dirname, 'assets', 'insufficient.ejs'),
       {
         name: this.name,
         amount,

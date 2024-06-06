@@ -61,7 +61,7 @@ class AuthService {
             data: {
               email: data.email,
               name: data.name,
-              ohone: data.phone,
+              phone: data.phone,
               noticationType: data.notificationType,
             },
             notify: 'new',
